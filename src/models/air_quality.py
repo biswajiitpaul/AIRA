@@ -13,3 +13,5 @@ class NormalizedAirQuality:
     unit: Optional[str] = None
     sensor_id: Optional[int] = None
     location_id: Optional[int] = None
+    station_name: Optional[str] = None
+    source: Optional[str] = None
