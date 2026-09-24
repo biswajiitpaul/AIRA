@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-
+from dataclasses import dataclass
+from typing import Optional
 
 @dataclass
 class RiskResult:
@@ -7,6 +8,17 @@ class RiskResult:
     risk_level: str
     reasons: list[str]
 
+@dataclass
+class HotspotResult:
+    station_name: str
+    latitude: float
+    longitude: float
+    timestamp: object
+    risk_score: float
+    risk_level: str
+    high_risk_observations: int
+    reasons: list[str]
+    confidence: str
 
 def calculate_risk_score(
     aqi: float,
@@ -76,16 +88,57 @@ def calculate_risk_score(
 def detect_hotspot(
     risk_results: list[RiskResult],
     minimum_high_risk: int = 2,
-) -> bool:
+    station_name: str = "Unknown",
+    latitude: float = 0.0,
+    longitude: float = 0.0,
+    timestamp=None,
+) -> HotspotResult | None:
     """
-    Determine whether a location shows repeated high-risk conditions.
+    Create structured hotspot intelligence when repeated
+    high-risk conditions are detected.
 
-    This is a prototype hotspot rule, not an emergency-grade detector.
+    This is a prototype rule, not an emergency-grade detector.
     """
 
-    high_risk_count = sum(
-        result.risk_level == "HIGH"
+    high_risk_results = [
+        result
         for result in risk_results
-    )
+        if result.risk_level == "HIGH"
+    ]
 
-    return high_risk_count >= minimum_high_risk
+    high_risk_count = len(high_risk_results)
+
+    if high_risk_count < minimum_high_risk:
+        return None
+
+    latest_result = max(
+    high_risk_results,
+    key=lambda result: result.risk_score,
+)
+
+    # Combine unique reasons from high-risk observations.
+    reasons = []
+    for result in high_risk_results:
+        for reason in result.reasons:
+            if reason not in reasons:
+                reasons.append(reason)
+
+    # Prototype confidence based on repeated high-risk observations.
+    if high_risk_count >= 4:
+        confidence = "HIGH"
+    elif high_risk_count >= 2:
+        confidence = "MEDIUM"
+    else:
+        confidence = "LOW"
+
+    return HotspotResult(
+        station_name=station_name,
+        latitude=latitude,
+        longitude=longitude,
+        timestamp=timestamp,
+        risk_score=latest_result.risk_score,
+        risk_level=latest_result.risk_level,
+        high_risk_observations=high_risk_count,
+        reasons=reasons,
+        confidence=confidence,
+    )
