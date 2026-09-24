@@ -1,4 +1,4 @@
-from src.analysis.risk import (calculate_risk_score,detect_hotspot,)
+from src.analysis.risk import (calculate_risk_score,detect_hotspot,classify_hotspot_behavior,)
 
 
 def test_high_risk_score():
@@ -146,3 +146,40 @@ def test_structured_hotspot_with_real_opencity_data():
         assert hotspot.risk_level == "HIGH"
         assert hotspot.confidence in {"MEDIUM", "HIGH"}
         assert len(hotspot.reasons) >= 1
+
+
+def test_persistent_hotspot_behavior():
+    results = [
+        calculate_risk_score(300, 3.0),
+        calculate_risk_score(320, 3.1),
+        calculate_risk_score(350, 3.2),
+    ]
+
+    behavior = classify_hotspot_behavior(results)
+
+    assert behavior == "PERSISTENT"
+
+
+def test_emerging_hotspot_behavior():
+    results = [
+        calculate_risk_score(60, 0.5),
+        calculate_risk_score(80, 0.8),
+        calculate_risk_score(180, 2.2),
+        calculate_risk_score(250, 2.8),
+    ]
+
+    behavior = classify_hotspot_behavior(results)
+
+    assert behavior == "EMERGING"
+
+
+def test_transient_hotspot_behavior():
+    results = [
+        calculate_risk_score(70, 0.5),
+        calculate_risk_score(350, 3.5),
+        calculate_risk_score(80, 0.5),
+    ]
+
+    behavior = classify_hotspot_behavior(results)
+
+    assert behavior == "TRANSIENT"

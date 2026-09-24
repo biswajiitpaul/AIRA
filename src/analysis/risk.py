@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from dataclasses import dataclass
-from typing import Optional
+
+
 
 @dataclass
 class RiskResult:
@@ -112,8 +112,8 @@ def detect_hotspot(
         return None
 
     latest_result = max(
-    high_risk_results,
-    key=lambda result: result.risk_score,
+        high_risk_results,
+        key=lambda result: result.risk_score,
 )
 
     # Combine unique reasons from high-risk observations.
@@ -142,3 +142,68 @@ def detect_hotspot(
         reasons=reasons,
         confidence=confidence,
     )
+def classify_hotspot_behavior(
+    risk_results: list[RiskResult],
+    minimum_high_risk: int = 2,
+) -> str:
+    """
+    Classify the temporal behavior of environmental risk.
+
+    Prototype classification:
+    - PERSISTENT: repeated high-risk observations continue
+    - EMERGING: risk increases toward the latest observations
+    - TRANSIENT: a short-lived high-risk spike is detected
+
+    This is an analytical prototype, not an emergency-grade detector.
+    """
+
+    if len(risk_results) < 2:
+        return "TRANSIENT"
+
+    high_risk_count = sum(
+        result.risk_level == "HIGH"
+        for result in risk_results
+    )
+
+    recent_results = risk_results[-minimum_high_risk:]
+
+    # Repeated high-risk observations at the end indicate persistence.
+    if (
+        high_risk_count >= minimum_high_risk
+        and all(
+            result.risk_level == "HIGH"
+            for result in recent_results
+        )
+    ):
+        return "PERSISTENT"
+
+    # Detect an isolated HIGH-risk spike surrounded by lower risk.
+    for index in range(1, len(risk_results) - 1):
+        previous_result = risk_results[index - 1]
+        current_result = risk_results[index]
+        next_result = risk_results[index + 1]
+
+        if (
+            current_result.risk_level == "HIGH"
+            and previous_result.risk_level != "HIGH"
+            and next_result.risk_level != "HIGH"
+        ):
+            return "TRANSIENT"
+
+    # Compare earlier and recent risk levels for an emerging trend.
+    midpoint = len(risk_results) // 2
+
+    early_average = sum(
+        result.risk_score
+        for result in risk_results[:midpoint]
+    ) / midpoint
+
+    recent_average = sum(
+        result.risk_score
+        for result in risk_results[midpoint:]
+    ) / (len(risk_results) - midpoint)
+
+    if recent_average > early_average:
+        return "EMERGING"
+
+    return "TRANSIENT"
