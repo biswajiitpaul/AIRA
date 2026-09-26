@@ -37,9 +37,9 @@ def test_create_forecasting_dataset():
     )
 
     assert features == [
-        [100, 110, 120],
-        [110, 120, 130],
-    ]
+    [100, 110, 120, 3.0, 4.0],
+    [110, 120, 130, 4.0, 4.0],
+]
 
     assert targets == [130, 140]
 
@@ -91,12 +91,14 @@ def test_forecasting_dataset_with_real_opencity_data():
     assert len(records) == 371
     assert len(features) == 368
     assert len(targets) == 368
-    assert len(features[0]) == 3
+    assert len(features[0]) == 5
     assert features[0] == [
-        records[0].value,
-        records[1].value,
-        records[2].value,
-    ]
+    records[0].value,
+    records[1].value,
+    records[2].value,
+    float(records[3].timestamp.hour),
+    float(records[3].timestamp.weekday()),
+]
     assert targets[0] == records[3].value
 
 

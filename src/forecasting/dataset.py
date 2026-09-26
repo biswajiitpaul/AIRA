@@ -10,13 +10,13 @@ def create_forecasting_dataset(
     """
     Convert ordered AQI observations into supervised forecasting samples.
 
-    Each sample uses the previous `lookback` AQI values to predict
-    the next hourly AQI value.
+    Each sample uses the previous `lookback` AQI values plus
+    time-based features to predict the next AQI value.
 
-    Example with lookback=3:
-
-        [100, 110, 120] -> 130
-        [110, 120, 130] -> 140
+    Features:
+        - previous AQI values
+        - target hour
+        - target day of week
 
     The records should already be ordered chronologically.
     """
@@ -27,16 +27,31 @@ def create_forecasting_dataset(
     if len(records) <= lookback:
         return [], []
 
-    values = [record.value for record in records]
-
     features = []
     targets = []
 
-    for index in range(lookback, len(values)):
-        features.append(values[index - lookback:index])
-        targets.append(values[index])
+    for index in range(lookback, len(records)):
+        previous_values = [
+            record.value
+            for record in records[index - lookback:index]
+        ]
+
+        target_record = records[index]
+
+        hour = target_record.timestamp.hour
+        day_of_week = target_record.timestamp.weekday()
+
+        sample = previous_values + [
+            float(hour),
+            float(day_of_week),
+        ]
+
+        features.append(sample)
+        targets.append(target_record.value)
 
     return features, targets
+
+
 def split_time_series(
     features: list[list[float]],
     targets: list[float],

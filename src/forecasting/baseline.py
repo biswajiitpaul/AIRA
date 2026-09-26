@@ -4,4 +4,4 @@ def persistence_forecast(
     """
     Predict the next AQI using the most recent observed AQI.
     """
-    return [sample[-1] for sample in features]
+    return [sample[2] for sample in features]
