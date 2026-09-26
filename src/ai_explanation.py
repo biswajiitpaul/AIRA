@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from google import genai
+from src.analysis.risk import RiskResult
 
 load_dotenv()
 
@@ -51,3 +52,14 @@ Requirements:
     )
 
     return response.text
+def explain_risk_result(aqi: float, risk_result: RiskResult) -> str:
+    """
+    Generate a Gemini explanation directly from AIRA's
+    structured risk result.
+    """
+    return explain_environmental_risk(
+        aqi=aqi,
+        risk_level=risk_result.risk_level,
+        risk_score=risk_result.risk_score,
+        reasons=risk_result.reasons,
+    )
