@@ -7,6 +7,9 @@ import "leaflet/dist/leaflet.css";
 function App() {
   const [weather, setWeather] = useState(null);
   const [airQuality, setAirQuality] = useState(null);
+  const [riskData, setRiskData] = useState(null);
+  const [riskLoading, setRiskLoading] = useState(true);
+  const [riskError, setRiskError] = useState(false);
 
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [airLoading, setAirLoading] = useState(true);
@@ -61,6 +64,37 @@ function App() {
       });
   }, []);
 
+
+    useEffect(() => {
+    if (airQuality?.us_aqi == null) return;
+
+    const windSpeed = weather?.wind_speed_10m ?? null;
+
+    fetch("/api/risk", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        aqi: airQuality.us_aqi,
+        anomaly_score: 0,
+        wind_speed_kmh: windSpeed,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Risk API error");
+        return response.json();
+      })
+      .then((data) => {
+        setRiskData(data);
+        setRiskLoading(false);
+      })
+      .catch((error) => {
+        console.error("Risk error:", error);
+        setRiskError(true);
+        setRiskLoading(false);
+      });
+  }, [airQuality, weather]);
   const getAirStatus = () => {
     if (!airQuality) return "Data unavailable";
 

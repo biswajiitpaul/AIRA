@@ -13,15 +13,16 @@ def explain_environmental_risk(
     risk_score: float,
     reasons: list[str],
 ) -> str:
-    """
-    Generate a plain-language explanation of AIRA's
-    already-computed environmental risk signals.
-    """
 
     api_key = os.getenv("GEMINI_API_KEY")
 
     if not api_key:
-        raise RuntimeError("GEMINI_API_KEY is not set")
+        return (
+            f"AIRA classified this situation as {risk_level} risk "
+            f"with a score of {risk_score:.1f}. "
+            f"Detected signals: {', '.join(reasons)}. "
+            "AI explanation is unavailable because the API key is not set."
+        )
 
     client = genai.Client(api_key=api_key)
 
@@ -46,17 +47,23 @@ Requirements:
 - Keep the response under 120 words.
 """
 
-    response = client.models.generate_content(
-        model="gemini-3.8-flash",
-        contents=prompt,
-    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-3.8-flash",
+            contents=prompt,
+        )
+        return response.text
+    except Exception as exc:
+        print(f"Gemini unavailable: {exc}")
+        return (
+            f"AIRA classified this situation as {risk_level} risk "
+            f"with a score of {risk_score:.1f}. "
+            f"Detected signals: {', '.join(reasons)}. "
+            "AI explanation is temporarily unavailable."
+        )
 
-    return response.text
+
 def explain_risk_result(aqi: float, risk_result: RiskResult) -> str:
-    """
-    Generate a Gemini explanation directly from AIRA's
-    structured risk result.
-    """
     return explain_environmental_risk(
         aqi=aqi,
         risk_level=risk_result.risk_level,
